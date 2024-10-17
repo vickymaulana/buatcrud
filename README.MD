@@ -79,6 +79,7 @@ This command will generate:
 
 - Laravel 11+
 - PHP 8.2+
+- [Laravel11-Stisla](https://github.com/vickymaulana/laravel11-stisla) 
 
 ## License
 
