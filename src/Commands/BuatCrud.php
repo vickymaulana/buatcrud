@@ -51,11 +51,11 @@ class BuatCrud extends Command
         $this->generateFormRequest($name, $fieldArray);
 
         // Generate Policy untuk model
-        // Artisan::call('make:policy', [
-        //     'name' => $name . 'Policy',
-        //     '--model' => $name,
-        // ]);
-        // $this->info('Policy untuk ' . $name . ' berhasil dibuat.');
+        Artisan::call('make:policy', [
+            'name' => $name . 'Policy',
+            '--model' => $name,
+        ]);
+        $this->info('Policy untuk ' . $name . ' berhasil dibuat.');
 
         // Generate views dengan template Blade
         $this->buatViews($name, $fieldArray);
