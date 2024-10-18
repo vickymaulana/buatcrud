@@ -382,7 +382,13 @@ HTML;
         $templateForm = <<<BLADE
 @extends('layouts.app')
 
-@section('title', "{{ \$item ? 'Edit' : 'Add' }} {$name}")
+@section('title')
+    @if(\$item)
+        Edit {$name}
+    @else
+        Add {$name}
+    @endif
+@endsection
 
 @push('style')
 <!-- CSS Libraries -->
@@ -392,7 +398,7 @@ HTML;
 <div class="main-content">
     <section class="section">
         <div class="section-header">
-            <h1>{{ \$item ? 'Edit' : 'Add' }} {$name}</h1>
+            <h1>@yield('title')</h1>
         </div>
 
         <div class="section-body">
