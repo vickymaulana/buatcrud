@@ -80,8 +80,13 @@ class BuatCrud extends Command
         $fieldArray = explode(',', $fields);
         $parsedFields = [];
         foreach ($fieldArray as $field) {
-            [$name, $type] = explode(':', $field);
-            $parsedFields[] = ['name' => $name, 'type' => $type];
+            $parts = explode(':', $field);
+            if (count($parts) !== 2) {
+                $this->error("Format field salah untuk '{$field}'. Harus 'nama:tipe'.");
+                continue;
+            }
+            [$name, $type] = $parts;
+            $parsedFields[] = ['name' => trim($name), 'type' => trim($type)];
         }
         return $parsedFields;
     }
@@ -96,6 +101,10 @@ class BuatCrud extends Command
 
         // Update file migration dengan custom fields
         $migrationFiles = glob(database_path('migrations/*_create_' . Str::snake(Str::plural($name)) . '_table.php'));
+        if (empty($migrationFiles)) {
+            $this->error('File migration tidak ditemukan.');
+            return;
+        }
         $migrationFile = array_shift($migrationFiles);
         $migrationContent = File::get($migrationFile);
 
@@ -255,7 +264,7 @@ CONTROLLER;
             File::makeDirectory($path, 0755, true);
         }
 
-        // Generate table headers and data cells based on fields
+        // Generate table headers and data cells berdasarkan fields
         $headerFields = '';
         $fieldTemplate = '';
         if (is_array($fieldArray) && count($fieldArray) > 0) {
@@ -263,7 +272,7 @@ CONTROLLER;
                 $headerFields .= "<th>" . ucfirst($field['name']) . "</th>\n";
                 $fieldTemplate .= "<td>{{ \$item->{$field['name']} }}</td>\n";
             }
-            $columnCount = count($fieldArray) + 1; // +1 for Actions column
+            $columnCount = count($fieldArray) + 1; // +1 untuk kolom Actions
         } else {
             // Contoh default jika tidak ada field
             $headerFields = "<th>Example Column</th>\n";
@@ -271,10 +280,11 @@ CONTROLLER;
             $columnCount = 2; // Example Column + Actions column
         }
 
+        // Template untuk index.blade.php
         $templateIndex = <<<BLADE
 @extends('layouts.app')
 
-@section('title', '$name List')
+@section('title', '{$name} List')
 
 @push('style')
 <!-- CSS Libraries -->
@@ -284,16 +294,16 @@ CONTROLLER;
 <div class="main-content">
     <section class="section">
         <div class="section-header">
-            <h1>$name List</h1>
+            <h1>{$name} List</h1>
             <div class="section-header-button">
-                <a href="{{ route('$lowerCaseName.create') }}" class="btn btn-primary">Tambah $name</a>
+                <a href="{{ route('{$lowerCaseName}.create') }}" class="btn btn-primary">Tambah {$name}</a>
             </div>
         </div>
 
         <div class="section-body">
             <div class="card">
                 <div class="card-header">
-                    <h4>$name List</h4>
+                    <h4>{$name} List</h4>
                 </div>
                 <div class="card-body">
                     @if(session('success'))
@@ -305,17 +315,17 @@ CONTROLLER;
                         <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    $headerFields
+                                    {$headerFields}
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (\$items as \$item)
                                     <tr>
-                                        $fieldTemplate
+                                        {$fieldTemplate}
                                         <td>
-                                            <a href="{{ route('$lowerCaseName.edit', \$item->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                                            <form action="{{ route('$lowerCaseName.destroy', \$item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
+                                            <a href="{{ route('{$lowerCaseName}.edit', \$item->id) }}" class="btn btn-warning btn-sm">Edit</a>
+                                            <form action="{{ route('{$lowerCaseName}.destroy', \$item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger btn-sm">Delete</button>
@@ -325,7 +335,7 @@ CONTROLLER;
                                 @endforeach
                                 @if(count(\$items) == 0)
                                     <tr>
-                                        <td colspan="$columnCount">Data tidak tersedia.</td>
+                                        <td colspan="{$columnCount}">Data tidak tersedia.</td>
                                     </tr>
                                 @endif
                             </tbody>
@@ -345,33 +355,34 @@ CONTROLLER;
 @endpush
 BLADE;
 
-        // Template create and edit (reusable form)
+        // Template untuk create.blade.php dan edit.blade.php (form yang dapat digunakan ulang)
         $formFields = '';
         if (is_array($fieldArray) && count($fieldArray) > 0) {
             foreach ($fieldArray as $field) {
                 $formFields .= <<<HTML
-    <div class="form-group">
-        <label>{{ ucfirst('$field[name]') }}</label>
-        <input type="text" class="form-control" name="$field[name]" value="{{ old('$field[name]', \$item ? \$item->$field[name] : '') }}" required>
-    </div>
+        <div class="form-group">
+            <label>{{ ucfirst('{$field['name']}') }}</label>
+            <input type="text" class="form-control" name="{$field['name']}" value="{{ old('{$field['name']}', \$item ? \$item->{$field['name']} : '') }}" required>
+        </div>
 
 HTML;
             }
         } else {
             $formFields = <<<HTML
-    <div class="form-group">
-        <!-- Contoh field: ganti sesuai kebutuhan -->
-        <label>Nama</label>
-        <input type="text" class="form-control" name="nama" value="{{ old('nama', \$item ? \$item->nama : '') }}" required>
-    </div>
+        <div class="form-group">
+            <!-- Contoh field: ganti sesuai kebutuhan -->
+            <label>Nama</label>
+            <input type="text" class="form-control" name="nama" value="{{ old('nama', \$item ? \$item->nama : '') }}" required>
+        </div>
 
 HTML;
         }
 
+        // Template untuk create.blade.php dan edit.blade.php
         $templateForm = <<<BLADE
 @extends('layouts.app')
 
-@section('title', '{{ \$item ? 'Edit' : 'Add' }} $name')
+@section('title', '{{ \$item ? 'Edit' : 'Add' }} {$name}')
 
 @push('style')
 <!-- CSS Libraries -->
@@ -381,19 +392,19 @@ HTML;
 <div class="main-content">
     <section class="section">
         <div class="section-header">
-            <h1>{{ \$item ? 'Edit' : 'Add' }} $name</h1>
+            <h1>{{ \$item ? 'Edit' : 'Add' }} {$name}</h1>
         </div>
 
         <div class="section-body">
             <div class="card">
                 <div class="card-body">
-                    <form action="{{ \$item ? route('$lowerCaseName.update', \$item->id) : route('$lowerCaseName.store') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ \$item ? route('{$lowerCaseName}.update', \$item->id) : route('{$lowerCaseName}.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @if(\$item) @method('PUT') @endif
-                        $formFields
+                        {$formFields}
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary">Save</button>
-                            <a href="{{ route('$lowerCaseName.index') }}" class="btn btn-secondary">Back</a>
+                            <a href="{{ route('{$lowerCaseName}.index') }}" class="btn btn-secondary">Back</a>
                         </div>
                     </form>
                 </div>
@@ -455,9 +466,9 @@ BLADE;
         if (File::exists($sidebarPath)) {
             // Kode menu sidebar yang akan ditambahkan
             $sidebarMenu = <<<SIDEBAR
-<li class="{{ Request::is('$lowerCaseName*') ? 'active' : '' }}">
-    <a class="nav-link" href="{{ route('$lowerCaseName.index') }}">
-        <i class="fas fa-database"></i> <span>{{ ucfirst('$lowerCaseName') }}</span>
+<li class="{{ Request::is('{$lowerCaseName}*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('{$lowerCaseName}.index') }}">
+        <i class="fas fa-database"></i> <span>{{ ucfirst('{$lowerCaseName}') }}</span>
     </a>
 </li>
 SIDEBAR;
