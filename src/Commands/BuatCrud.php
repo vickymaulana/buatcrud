@@ -360,20 +360,20 @@ BLADE;
         if (is_array($fieldArray) && count($fieldArray) > 0) {
             foreach ($fieldArray as $field) {
                 $formFields .= <<<HTML
-        <div class="form-group">
-            <label>{{ ucfirst('{$field['name']}') }}</label>
-            <input type="text" class="form-control" name="{$field['name']}" value="{{ old('{$field['name']}', \$item ? \$item->{$field['name']} : '') }}" required>
-        </div>
+            <div class="form-group">
+                <label>{{ ucfirst('{$field['name']}') }}</label>
+                <input type="text" class="form-control" name="{$field['name']}" value="{{ old('{$field['name']}', \$item ? \$item->{$field['name']} : '') }}" required>
+            </div>
 
 HTML;
             }
         } else {
             $formFields = <<<HTML
-        <div class="form-group">
-            <!-- Contoh field: ganti sesuai kebutuhan -->
-            <label>Nama</label>
-            <input type="text" class="form-control" name="nama" value="{{ old('nama', \$item ? \$item->nama : '') }}" required>
-        </div>
+            <div class="form-group">
+                <!-- Contoh field: ganti sesuai kebutuhan -->
+                <label>Nama</label>
+                <input type="text" class="form-control" name="nama" value="{{ old('nama', \$item ? \$item->nama : '') }}" required>
+            </div>
 
 HTML;
         }
@@ -382,7 +382,7 @@ HTML;
         $templateForm = <<<BLADE
 @extends('layouts.app')
 
-@section('title', '{{ \$item ? 'Edit' : 'Add' }} {$name}')
+@section('title', "{{ \$item ? 'Edit' : 'Add' }} {$name}")
 
 @push('style')
 <!-- CSS Libraries -->
